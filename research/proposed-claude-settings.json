@@ -1,0 +1,58 @@
+// PROPOSED .claude/settings.json — review, then copy to .claude/settings.json BY HAND.
+//
+// Why this is not auto-applied: Claude Code's auto-mode safety classifier blocks an
+// *agent* from writing .claude/settings.json (permission wildcards, hooks, and anything
+// that could enable outward data exposure are treated as the USER's action). This is the
+// same guardrail Research_Analyzer documented. Enabling it is informed consent — yours to give.
+//
+// The agent orchestration in this repo uses LOCAL, in-workflow subagents (the Workflow tool),
+// which need NONE of these settings. This file only matters if you want persistent teammates
+// or the claude.ai Remote Control bridge.
+//
+// ── Three layers of "Claude Teams", by blast radius ───────────────────────────────────────
+//  1. In-workflow subagents (USED here) — ephemeral agents inside Workflow; share results;
+//     LOCAL ONLY, nothing leaves the machine; no setting required.
+//  2. Teammates — persistent peer sessions that message each other; LOCAL ONLY; teammateMode.
+//  3. Remote Control / claude.ai Teams — bridges the session to claude.ai (OUTWARD-FACING;
+//     mirrors session state to the web); remoteControlAtStartup. Leave OFF unless you want it.
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+
+  "teammateMode": "auto",          // local teammate execution (tmux/in-process). Safe, no upload.
+
+  // "remoteControlAtStartup": true,  // OUTWARD-FACING. Uncomment ONLY if you want the claude.ai
+                                       // bridge. Mirrors session state to claude.ai (may be cached
+                                       // /indexed even if later deleted). Keep isolatePeerMachines on.
+
+  "isolatePeerMachines": true,     // SAFETY: a peer on another machine cannot message this session
+                                   // without your explicit approval. Keep on whenever remote is on.
+
+  // "autoUploadSessions" is deliberately OMITTED — it would mirror EVERY session to the web.
+
+  "permissions": {
+    "allow": [
+      "Read", "Grep", "Glob", "WebSearch", "WebFetch",
+      "Write(research/**)", "Edit(research/**)",
+      "Write(put_strike/src/**)", "Edit(put_strike/src/**)",
+      "Write(put_strike/scripts/**)", "Edit(put_strike/scripts/**)",
+      "Write(CLAUDE.md)", "Edit(CLAUDE.md)",
+      "Write(put_strike/CLAUDE.md)", "Edit(put_strike/CLAUDE.md)",
+      "Write(MEMORY.md)",
+      "Bash(node:*)", "Bash(npx tsx:*)", "Bash(npx jest:*)", "Bash(npm run:*)", "Bash(python:*)"
+    ]
+  },
+
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "echo \"FinAI: automated multi-strategy trading research + simulation built on PutStrike (put_strike/). Read CLAUDE.md and research/ before working. Keep strategy discovery separate from red-team critique; every red-team finding must name the strategy + failure mode (costs, capacity, data-snooping, regime, decay).\"",
+            "statusMessage": "Loading FinAI research context"
+          }
+        ]
+      }
+    ]
+  }
+}
