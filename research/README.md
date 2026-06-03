@@ -63,9 +63,10 @@ between fleets, not by a separate agent fleet — which is why it is not a numbe
 | 6 | **Novel-Options + Universe** | **141** | Options-inclusive sleeves + a wider optionable universe | 4 universe agents + 12 families → 24 specs → 4 lenses → panel → assembler | **CUT options VRP on its own scoring**; honest **~1.15, reaches-2 = FALSE**. Built **residual-momentum L/S** |
 | 7 | **Options-First Regime Robustness** | **136** | Make the book stable across regimes (esp. 2022) | 24 specs (12 options + 12 regime) → 4 red-team lenses | **0 clean BUILD · 8 build-after-fix (all theses falsified) · 12 CUT · 4 research-only** — no new sleeve beats the book |
 | 8 | **Expanded-Universe push** (execution-anchored) | **32** (scout 16 · red-team 6 · impl-review 10) | Pursue greater Sharpe via more tickers/instruments/data | scout → **main loop EXECUTES** → kill-tests → red-team → code-review | **1 keeper of 16** (commodity_trend); diagnosed naive-expansion degradation → **liquidity-screen fix** (OOS 0.66→0.86); **fixed 2 sim/live divergences**. Ceiling holds (~0.9 OOS) |
+| 9 | **Diversification + Opportunity Signals** | **17** (datasets 6 · methods 9 · design 2) | Improve diversification + live feedback + opportunity signals | dataset research (web) · foundational-method A/B · opportunity-signal/VRP design | **No optimizer beats naive equal-risk** (HRP/min-var/MDP all lose — DeMiguel 2009); built the **opportunity-signal layer** + VRP live-feedback seam; **dataset roadmap** (free: EDGAR/QuantConnect/Form-4) |
 
-**Totals: ~650 subagents across 8 fleet runs** (discovery 82 · advanced 115 · impl-review 9 · audit 21 ·
-uncorrelated 114 · options 141 · regime 136 · expanded-universe 32), **≈ 30M+ subagent tokens.** Every fleet's
+**Totals: ~670 subagents across 9 fleet runs** (discovery 82 · advanced 115 · impl-review 9 · audit 21 ·
+uncorrelated 114 · options 141 · regime 136 · expanded-universe 32 · diversification 17), **≈ 31M+ subagent tokens.** Every fleet's
 machine-readable ranking is in [`backtests/`](backtests/). The 8th (expanded-universe) is **execution-anchored**:
 agents *bracket* execution (ideate before, attack after) while the main loop runs the real backtests — see
 [`expanded-universe.md`](expanded-universe.md).
@@ -220,6 +221,7 @@ method-dependent; the **return-level executed figures above are the conservative
 | [`options-strategies.md`](options-strategies.md) | The options sleeves + 141-agent fleet — why VRP is build-for-live, not backtestable |
 | [`regime-stability.md`](regime-stability.md) | The 136-agent options-first regime study — both 2022-fixes rejected, final verdict |
 | [`expanded-universe.md`](expanded-universe.md) | The expanded-universe push (438 eq + crypto + multi-asset + unique alt-data) — execution-anchored fleet, 1 keeper of 16, the liquidity-screen fix, sim/live divergences fixed |
+| [`diversification.md`](diversification.md) | Diversification methods (HRP/min-var/MDP all lose to naive — DeMiguel 2009), the VRP live-feedback seam, the Investment-Opportunity Signal layer, and the free+paid dataset roadmap |
 | [`backtests/`](backtests/) | Machine-readable fleet rankings + backtest summary JSON |
 
 ---

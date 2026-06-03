@@ -1,433 +1,153 @@
 {
- "generatedAt": "2026-06-03T03:43:31.745Z",
+ "generatedAt": "2026-06-03T05:35:33.845Z",
  "initialCapital": 100000,
  "equity": [
   {
-   "date": "2026-03-06",
-   "equity": 99965.73,
-   "deployedPct": 68.6,
-   "regime": "HIGH_VOL",
-   "trades": 44
-  },
-  {
-   "date": "2026-03-09",
-   "equity": 100395.04,
-   "deployedPct": 68.7,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-10",
-   "equity": 100411.53,
-   "deployedPct": 68.7,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-11",
-   "equity": 100273.89,
-   "deployedPct": 68.7,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-12",
-   "equity": 99600.49,
-   "deployedPct": 68.4,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-13",
-   "equity": 99374.65,
-   "deployedPct": 67.1,
-   "regime": "HIGH_VOL",
-   "trades": 14
-  },
-  {
-   "date": "2026-03-16",
-   "equity": 99752.13,
-   "deployedPct": 67.2,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-17",
-   "equity": 99977.94,
-   "deployedPct": 67.3,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-18",
-   "equity": 99239.53,
-   "deployedPct": 67.1,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-19",
-   "equity": 98840.31,
-   "deployedPct": 66.9,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-20",
-   "equity": 97693.4,
-   "deployedPct": 56.9,
-   "regime": "HIGH_VOL",
-   "trades": 25
-  },
-  {
-   "date": "2026-03-23",
-   "equity": 97610.06,
-   "deployedPct": 56.8,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-24",
-   "equity": 97629.36,
-   "deployedPct": 56.8,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-25",
-   "equity": 98224.05,
-   "deployedPct": 57.1,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-26",
-   "equity": 97413.38,
-   "deployedPct": 56.7,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-27",
-   "equity": 97685.96,
-   "deployedPct": 55.8,
-   "regime": "HIGH_VOL",
-   "trades": 11
-  },
-  {
-   "date": "2026-03-30",
-   "equity": 97737.18,
-   "deployedPct": 55.8,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-03-31",
-   "equity": 98652.67,
-   "deployedPct": 56.2,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-01",
-   "equity": 99050.36,
-   "deployedPct": 56.4,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-02",
-   "equity": 99036.67,
-   "deployedPct": 56.4,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-06",
-   "equity": 99085.95,
-   "deployedPct": 56.8,
-   "regime": "NORMAL",
-   "trades": 16
-  },
-  {
-   "date": "2026-04-07",
-   "equity": 99167.53,
-   "deployedPct": 56.9,
-   "regime": "HIGH_VOL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-08",
-   "equity": 99783.3,
-   "deployedPct": 57.1,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-09",
-   "equity": 99964.48,
-   "deployedPct": 57.2,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-10",
-   "equity": 99881.99,
-   "deployedPct": 57.2,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-13",
-   "equity": 100049.8,
-   "deployedPct": 59.3,
-   "regime": "NORMAL",
-   "trades": 30
-  },
-  {
-   "date": "2026-04-14",
-   "equity": 100264.71,
-   "deployedPct": 59.4,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-15",
-   "equity": 100065.5,
-   "deployedPct": 59.3,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-16",
-   "equity": 100243.77,
-   "deployedPct": 59.3,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-17",
-   "equity": 100528.12,
-   "deployedPct": 59.5,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-20",
-   "equity": 100502.33,
-   "deployedPct": 61.6,
-   "regime": "NORMAL",
-   "trades": 10
-  },
-  {
-   "date": "2026-04-21",
-   "equity": 100206.17,
-   "deployedPct": 61.5,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-22",
-   "equity": 100424.89,
-   "deployedPct": 61.6,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-23",
-   "equity": 100668.52,
-   "deployedPct": 61.7,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-24",
-   "equity": 101002.04,
-   "deployedPct": 61.8,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-27",
-   "equity": 100828.57,
-   "deployedPct": 61.6,
-   "regime": "NORMAL",
-   "trades": 19
-  },
-  {
-   "date": "2026-04-28",
-   "equity": 100769.77,
-   "deployedPct": 61.5,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-29",
-   "equity": 100911.92,
-   "deployedPct": 61.6,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-04-30",
-   "equity": 101666.71,
-   "deployedPct": 61.9,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
-   "date": "2026-05-01",
-   "equity": 101594.16,
-   "deployedPct": 61.9,
-   "regime": "NORMAL",
-   "trades": 0
-  },
-  {
    "date": "2026-05-04",
-   "equity": 101397.32,
-   "deployedPct": 64.9,
+   "equity": 99970.02,
+   "deployedPct": 60,
    "regime": "NORMAL",
-   "trades": 21
+   "trades": 49
   },
   {
    "date": "2026-05-05",
-   "equity": 101998.13,
-   "deployedPct": 65.1,
+   "equity": 100469.83,
+   "deployedPct": 60.2,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-06",
-   "equity": 102419.39,
-   "deployedPct": 65.2,
+   "equity": 100745.21,
+   "deployedPct": 60.3,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-07",
-   "equity": 101846.58,
-   "deployedPct": 65,
+   "equity": 100239.57,
+   "deployedPct": 60.1,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-08",
-   "equity": 102420.91,
-   "deployedPct": 65.2,
+   "equity": 100661.52,
+   "deployedPct": 60.3,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-11",
-   "equity": 102854.18,
-   "deployedPct": 68.6,
+   "equity": 101001.64,
+   "deployedPct": 64.7,
    "regime": "NORMAL",
-   "trades": 18
+   "trades": 17
   },
   {
    "date": "2026-05-12",
-   "equity": 102824.38,
-   "deployedPct": 68.6,
+   "equity": 101013.52,
+   "deployedPct": 64.7,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-13",
-   "equity": 102970.18,
-   "deployedPct": 68.7,
+   "equity": 101095.17,
+   "deployedPct": 64.7,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-14",
-   "equity": 102947.05,
-   "deployedPct": 68.7,
+   "equity": 101113.65,
+   "deployedPct": 64.7,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-15",
-   "equity": 102114.64,
-   "deployedPct": 68.4,
+   "equity": 100358.7,
+   "deployedPct": 64.5,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-18",
-   "equity": 102240.8,
-   "deployedPct": 65.2,
+   "equity": 100511.07,
+   "deployedPct": 63,
    "regime": "NORMAL",
-   "trades": 17
+   "trades": 16
   },
   {
    "date": "2026-05-19",
-   "equity": 102194.39,
-   "deployedPct": 65.2,
+   "equity": 100474.75,
+   "deployedPct": 63,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-20",
-   "equity": 102677.09,
-   "deployedPct": 65.3,
+   "equity": 100971.43,
+   "deployedPct": 63.2,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-21",
-   "equity": 102814.58,
-   "deployedPct": 65.4,
+   "equity": 101146.77,
+   "deployedPct": 63.3,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-22",
-   "equity": 103054.04,
-   "deployedPct": 65.5,
+   "equity": 101390.13,
+   "deployedPct": 63.4,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-26",
-   "equity": 103645.61,
-   "deployedPct": 69.3,
+   "equity": 102021.61,
+   "deployedPct": 66,
    "regime": "NORMAL",
-   "trades": 21
+   "trades": 25
   },
   {
    "date": "2026-05-27",
-   "equity": 103396.05,
-   "deployedPct": 69.2,
+   "equity": 101783.28,
+   "deployedPct": 65.9,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-28",
-   "equity": 103517.49,
-   "deployedPct": 69.3,
+   "equity": 101872.86,
+   "deployedPct": 65.9,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-05-29",
-   "equity": 103324.86,
-   "deployedPct": 69.2,
+   "equity": 101669.19,
+   "deployedPct": 65.9,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-06-01",
-   "equity": 103442.66,
-   "deployedPct": 69.2,
+   "equity": 101793.91,
+   "deployedPct": 65.9,
    "regime": "NORMAL",
    "trades": 0
   },
   {
    "date": "2026-06-02",
-   "equity": 104112.93,
-   "deployedPct": 70.3,
+   "equity": 102433.01,
+   "deployedPct": 68.5,
    "regime": "NORMAL",
-   "trades": 31
+   "trades": 32
   }
  ]
 }

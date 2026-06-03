@@ -55,6 +55,38 @@ Engine (src/lib)
 Data: yahoo-finance2 (quotes, options, OHLCV, macro) . FRED . Neon Postgres (persistence)
 ```
 
+## Agent fleet (how the strategies were discovered, stress-tested & validated)
+
+Every strategy in this system was discovered and adversarially validated by **agent orchestration** (9 fleet
+runs, ~670 subagents). The structure is **execution-anchored**: agents *bracket* the work — ideate before,
+attack after — while the main loop runs the real backtests, so a claim never ships until it meets data.
+
+```
+                          ┌──────────────────── research/brief.md (goal + grounding + the 0–60 metric) ───────────────────┐
+                          │                                                                                              │
+   ┌──────────┐   ┌───────▼────────┐   ┌─────────────────┐   ┌──────────────────────┐   ┌──────────────┐   ┌────────────▼─────────┐
+   │  SCOUT   │──▶│   FORMALIZE    │──▶│    MAIN LOOP    │──▶│      RED-TEAM        │──▶│  SYNTHESIZE  │──▶│   IMPLEMENT + SHIP   │
+   │ N agents │   │ codeable spec  │   │ EXECUTES the    │   │ N adversaries attack │   │ panel ranks  │   │ register sleeve /    │
+   │ 1 idea   │   │ + TS skeleton  │   │ real backtest   │   │ the EXECUTED result: │   │ survivors;   │   │ allocator change /   │
+   │ each     │   │ + falsifier    │   │ (OOS · net-of-β │   │ look-ahead? regime-  │   │ honest verdict│   │ opportunity signal,  │
+   └──────────┘   └────────────────┘   │  · ρ-to-book)   │   │ concentration? cost? │   └──────────────┘   │ then re-validate     │
+        ▲                              │ + KILL-TESTS    │   │ survivorship? tail-ρ?│                       └──────────────────────┘
+        │                              └────────┬────────┘   └──────────┬───────────┘
+        └──────────────── the loop repeats per phase; the main loop's executed numbers are the ground truth ┘
+
+   The 9 fleet runs (research/README.md):
+     1. Strategy Discovery (82)          6. Novel-Options + Universe (141)
+     2. Advanced High-Sharpe (115)       7. Options-First Regime Robustness (136)
+     3. Implementation Review (9)        8. Expanded-Universe (32)
+     4. Method Audit & Correction (21)   9. Diversification + Opportunity Signals (17)
+     5. Uncorrelated-Sleeve Discovery (114)
+```
+
+**What the fleets proved (honestly):** ~0.9 OOS Sharpe is the ceiling for free daily data + no leverage; the
+diversification win is **adding orthogonal return streams (the VRP/put sleeve) + a light adaptive allocator**,
+NOT a fancier optimizer (HRP / min-variance / max-diversification all *lost* to naive equal-risk — DeMiguel 2009).
+Full trail: [`research/README.md`](research/README.md) and the per-fleet `research/*.md` files.
+
 ## Quick start
 
 ```bash
@@ -64,16 +96,31 @@ npm run build        # production build (type-check + lint)
 npx jest             # validation tests (scoring + Black-Scholes)
 ```
 
-## Deploy to Vercel (the automated engine)
+## Deploy to Vercel — automatic daily trading + tracking (step by step)
 
-1. Connect a **Neon Postgres** DB in the Vercel **Storage** tab -> `DATABASE_URL`/`POSTGRES_URL` auto-inject;
-   the `quant_*` and `simulated_trades` schemas auto-create on first request.
-2. (Optional) set `CRON_SECRET` (the `/api/quant/run` route checks the `Authorization: Bearer` header Vercel
-   Cron sends) and `QUANT_INITIAL_CAPITAL` (default 100000). `FRED_API_KEY`/`FINNHUB_API_KEY` are optional.
-3. Deploy. `vercel.json` runs `/api/quant/run` **weekdays 21:30 UTC** (after the US close). Note: the daily
-   run backtests ~165 names, so `maxDuration` is set to 300s — that needs **Vercel Pro** (on Hobby, cap at
-   60s and trim the universe in `src/lib/strategies/universe.ts`).
-4. Open the **Strategy Engine** tab -> **Run Daily Now** to seed the first day, then watch it adapt.
+The system trades **all 12 sleeves in simulation every weekday** on a cron, persists the book + every trade to
+Neon, and surfaces **ranked investment-opportunity signals** in the dashboard. To stand it up:
+
+1. **Database.** Connect a **Neon Postgres** DB in the Vercel **Storage** tab → `DATABASE_URL`/`POSTGRES_URL`
+   auto-inject. The `quant_*` tables (book, holdings, trades, equity, allocations, **signals**) and the
+   `simulated_trades` (put journal) schema **auto-create on first request** — no migration step.
+2. **Env (optional).** `CRON_SECRET` (the `/api/quant/run` route requires the `Authorization: Bearer <secret>`
+   header that Vercel Cron sends), `QUANT_INITIAL_CAPITAL` (default 100000), `FRED_API_KEY`/`FINNHUB_API_KEY`.
+3. **Deploy + schedule.** `vercel.json` already runs `/api/quant/run` **weekdays 21:30 UTC** (after the US
+   close). The cron each day: fetches the lean live universe (`PRODUCTION_UNIVERSE`, concurrency 10, with a
+   coverage guard that HOLDS rather than trade a degraded pool), runs the adaptive meta-allocator over the 12
+   sleeves, executes the simulated trades, **computes the day's opportunity signals**, and persists everything.
+   `maxDuration` is 300s → needs **Vercel Pro** (on Hobby, cap at 60s and trim `EQUITY_UNIVERSE`).
+4. **Seed + watch.** Open the **Strategy Engine** tab → **Run Daily Now** to seed day one, then watch: the equity
+   curve, the live adaptive allocation (which sleeves are funded vs benched + why), holdings, simulated trades,
+   and the **Investment-Opportunity Signals** panel (every sleeve + any live puts, ranked by
+   *signal × regime-fit × marginal-diversification*).
+5. **Options / VRP.** The **Analyze / Screen** tab scores cash-secured puts on the live chain (the VRP stream);
+   the **Put Trades** tab is its simulation journal. The VRP sleeve's realized P&L is the live-feedback seam that
+   feeds the allocator (the daily run accepts live put opportunities via `opts.puts`).
+
+**Verify the automation end-to-end locally** (no DB, no keys): `scripts/daily/run.ts` replays the exact cron
+logic against a file-backed book.
 
 ## Local backtesting (no API keys needed)
 

@@ -72,6 +72,13 @@ export async function ensureQuantSchema(): Promise<boolean> {
       reason TEXT
     )
   `;
+  await db`
+    CREATE TABLE IF NOT EXISTS quant_signals (
+      signal_date DATE PRIMARY KEY,
+      payload JSONB NOT NULL,
+      created_at TIMESTAMPTZ DEFAULT NOW()
+    )
+  `;
   quantInit = true;
   return true;
 }
@@ -161,6 +168,14 @@ export async function persistDailyRun(res: DailyRunResult): Promise<void> {
       `;
     }
   }
+
+  // Investment-opportunity signals for the day (top 25, idempotent per date).
+  if (res.opportunities && res.opportunities.length) {
+    await db`
+      INSERT INTO quant_signals (signal_date, payload) VALUES (${res.date}, ${JSON.stringify(res.opportunities.slice(0, 25))})
+      ON CONFLICT (signal_date) DO UPDATE SET payload = EXCLUDED.payload, created_at = NOW()
+    `;
+  }
 }
 
 /** Reset the book to a fresh start with the given capital. */
@@ -192,6 +207,8 @@ export async function getQuantState() {
     : [];
   const trades = await db`SELECT * FROM quant_trades ORDER BY trade_date DESC, id DESC LIMIT 60`;
   const holdings = await db`SELECT symbol, shares FROM quant_holdings ORDER BY symbol`;
+  const signalRows = latestDate ? await db`SELECT payload FROM quant_signals WHERE signal_date = ${latestDate}` : [];
+  const opportunities = signalRows.length ? signalRows[0].payload : [];
 
   // Stats from the equity curve.
   const curve = equity.map((e: any) => ({ date: new Date(e.equity_date).toISOString().split("T")[0], equity: Number(e.equity), deployedPct: Number(e.deployed_pct), regime: e.regime }));
@@ -209,6 +226,7 @@ export async function getQuantState() {
       priorSharpe: a.prior_sharpe != null ? Number(a.prior_sharpe) : null, reason: a.reason,
     })),
     holdings: holdings.map((h: any) => ({ symbol: h.symbol, shares: Number(h.shares) })),
+    opportunities,
     recentTrades: trades.map((t: any) => ({
       date: new Date(t.trade_date).toISOString().split("T")[0], symbol: t.symbol, side: t.side,
       shares: Number(t.shares), price: Number(t.price), notional: Number(t.notional), cost: Number(t.cost), reason: t.reason,

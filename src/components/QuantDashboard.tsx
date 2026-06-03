@@ -12,8 +12,13 @@ interface QuantState {
   allocations?: { strategyKey: string; weight: number; benched: boolean; trailingSharpe: number | null; priorSharpe: number | null; reason: string }[];
   holdings?: { symbol: string; shares: number }[];
   recentTrades?: { date: string; symbol: string; side: string; shares: number; price: number; notional: number; cost: number; reason: string }[];
+  opportunities?: { rank: number; type: string; name: string; oppScore: number; recommendation: string; currentWeight: number; regime: string; components: { signalStrength: number; regimeFit: number; marginalDiversification: number } }[];
   stats?: { equity: number; totalReturnPct: number; cagrPct: number; sharpe: number; maxDrawdownPct: number; volPct: number; days: number };
 }
+
+const REC_COLOR: Record<string, string> = {
+  DEPLOY: "#34d399", SELL_PUT: "#34d399", HOLD: "#60a5fa", WATCH: "#fbbf24", TRIM: "#fbbf24", AVOID: "#f87171",
+};
 
 const SLEEVE_LABELS: Record<string, string> = {
   xs_momentum: "Cross-Sectional Momentum",
@@ -24,11 +29,17 @@ const SLEEVE_LABELS: Record<string, string> = {
   tail_hedge: "Tail Hedge (VIX term)",
   ts_trend: "Time-Series Trend",
   st_reversal: "Short-Term Reversal",
+  resid_momentum: "Residual-Momentum L/S",
+  lt_reversal: "Long-Term Reversal",
+  sector_lt_reversal: "Sector LT Reversal",
+  commodity_trend: "Commodity Trend",
+  vrp_csp: "VRP / Cash-Secured Puts",
 };
 
 const SLEEVE_COLOR: Record<string, string> = {
   xs_momentum: "#60a5fa", low_vol: "#34d399", factor_momentum: "#a78bfa", sector_rotation: "#fbbf24",
   cross_asset_trend: "#f472b6", tail_hedge: "#f87171", ts_trend: "#22d3ee", st_reversal: "#9ca3af",
+  resid_momentum: "#818cf8", lt_reversal: "#fb923c", sector_lt_reversal: "#facc15", commodity_trend: "#a3e635", vrp_csp: "#2dd4bf",
 };
 
 function fmtUSD(n: number) {
@@ -206,6 +217,30 @@ export default function QuantDashboard() {
               ))}
             </div>
           </div>
+
+          {/* Investment-opportunity signals (cross-instrument, ranked daily) */}
+          {(state.opportunities ?? []).length > 0 && (
+            <div className="bg-gray-800/50 border border-gray-700 rounded-lg p-4">
+              <h4 className="text-sm font-medium text-gray-400 mb-1">Investment-Opportunity Signals — ranked daily</h4>
+              <p className="text-[11px] text-gray-600 mb-3">Every sleeve (and any live put opportunities) scored by <span className="text-gray-400">signal × regime-fit × marginal-diversification</span>. Low-correlation diversifiers get a boost — the scarce resource. Observational; the allocator already adapts.</p>
+              <div className="space-y-1 max-h-72 overflow-y-auto text-xs">
+                <div className="flex items-center gap-2 text-[10px] text-gray-500 sticky top-0 bg-gray-800/90 py-1">
+                  <span className="w-6">#</span><span className="w-12">type</span><span className="flex-1">opportunity</span>
+                  <span className="w-16 text-right">oppScore</span><span className="w-16 text-right">div-boost</span><span className="w-20 text-right">action</span>
+                </div>
+                {(state.opportunities ?? []).map((o) => (
+                  <div key={o.rank} className="flex items-center gap-2 border-t border-gray-700/40 py-1">
+                    <span className="w-6 text-gray-600">{o.rank}</span>
+                    <span className="w-12 text-gray-500">{o.type}</span>
+                    <span className="flex-1 text-gray-200 truncate">{SLEEVE_LABELS[o.name] ?? o.name}</span>
+                    <span className="w-16 text-right text-gray-300">{o.oppScore.toFixed(2)}</span>
+                    <span className="w-16 text-right text-gray-500">{o.components.marginalDiversification.toFixed(2)}×</span>
+                    <span className="w-20 text-right font-medium" style={{ color: REC_COLOR[o.recommendation] ?? "#9ca3af" }}>{o.recommendation}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
 
           {/* Holdings + recent trades */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

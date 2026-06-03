@@ -80,6 +80,7 @@ async function handle(request: NextRequest) {
       trades: res.trades.length,
       tradeDetail: res.trades,
       allocations: res.decision?.detail.filter((d) => d.weight > 0 || d.benched) ?? [],
+      opportunities: res.opportunities.slice(0, 20),
       dataLoaded: loaded,
       dataFailed: failed,
       notes: res.notes,

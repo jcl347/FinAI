@@ -20,6 +20,16 @@ import {
 } from "../strategies/production";
 import { isMacroTicker } from "../strategies/universe";
 import { buildCurvePerfProvider, perfStatRows } from "./perf";
+import { rankOpportunities, type OpportunitySignal, type PutOpportunity, type SleeveDecisionRow } from "../signals/opportunity";
+
+/** Documented standalone ρ-to-SPY per sleeve (research/results.md) — drives the diversification boost in
+ *  the opportunity score. Negative/low-ρ sleeves are the scarce resource and get surfaced higher. */
+const RHO_SPY: Record<string, number> = {
+  xs_momentum: 0.65, low_vol: 0.56, factor_momentum: 0.66, sector_rotation: 0.6,
+  ts_trend: 0.58, cross_asset_trend: 0.28, tail_hedge: -0.07,
+  resid_momentum: -0.13, lt_reversal: -0.23, sector_lt_reversal: -0.15,
+  commodity_trend: 0.15, st_reversal: 0.67,
+};
 
 /** Universe floor used by the LIVE trade context — MUST equal the backtested meta's warmup
  *  (max sub-sleeve warmup + 5, see meta.ts) so the live-traded cross-section is identical to the
@@ -58,6 +68,8 @@ export interface DailyRunResult {
   grossExposurePct: number;
   deployedPct: number;
   perfRows: ReturnType<typeof perfStatRows>;
+  /** Ranked cross-instrument investment-opportunity signals (sleeves + optional put opportunities). */
+  opportunities: OpportunitySignal[];
   notes: string;
 }
 
@@ -70,6 +82,8 @@ export interface DailyRunOptions {
   rebalanceDays?: number;
   /** Force a rebalance regardless of cadence. */
   forceRebalance?: boolean;
+  /** Top scored PutStrike VRP put opportunities to fold into the opportunity-signal list (live only). */
+  puts?: PutOpportunity[];
 }
 
 function priceAt(data: AlignedData, symbol: string, i: number): number | null {
@@ -142,6 +156,7 @@ export function runDay(data: AlignedData, book: SimBook, opts: DailyRunOptions =
       grossExposurePct: equityBefore > 0 ? Math.round((gross / equityBefore) * 1000) / 10 : 0,
       deployedPct: equityBefore > 0 ? Math.round((gross / equityBefore) * 1000) / 10 : 0,
       perfRows: [],
+      opportunities: [],
       notes: "hold (between rebalances)",
     };
   }
@@ -211,6 +226,22 @@ export function runDay(data: AlignedData, book: SimBook, opts: DailyRunOptions =
     if (p != null) gross += Math.abs(sh * p);
   }
 
+  const perfRows = perfStatRows(PRODUCTION_SLEEVES, cpp, date, STRATEGY_PRIORS);
+
+  // Investment-opportunity signals: rank every sleeve (+ any live put opportunities) by
+  // signal × regime-fit × marginal-diversification, so the UI surfaces the best opportunities daily.
+  const detailByKey = new Map((decision?.detail ?? []).map((d) => [d.key, d]));
+  const sleeveRows: SleeveDecisionRow[] = perfRows.map((pr) => {
+    const d = detailByKey.get(pr.key);
+    return {
+      key: pr.key, family: pr.family, weight: d?.weight ?? 0,
+      blendedSharpe: d?.blendedSharpe ?? pr.trailingSharpe, trailingSharpe: pr.trailingSharpe,
+      trailingVol: pr.trailingVol, benched: d?.benched ?? false, confidence: pr.confidence ?? 0.5,
+      correlationToSpy: RHO_SPY[pr.key], reason: d?.reason ?? "",
+    };
+  });
+  const opportunities = rankOpportunities(date, sleeveRows, opts.puts ?? [], ctx.regime);
+
   return {
     date,
     regime: ctx.regime,
@@ -224,7 +255,8 @@ export function runDay(data: AlignedData, book: SimBook, opts: DailyRunOptions =
     grossExposurePct: equityAfter > 0 ? Math.round((gross / equityAfter) * 1000) / 10 : 0,
     // Realized gross (consistent with the off-day hold path); the target was decision.grossDeployed*volScale.
     deployedPct: equityAfter > 0 ? Math.round((gross / equityAfter) * 1000) / 10 : 0,
-    perfRows: perfStatRows(PRODUCTION_SLEEVES, cpp, date, STRATEGY_PRIORS),
+    perfRows,
+    opportunities,
     notes: signal.notes ?? "",
   };
 }
