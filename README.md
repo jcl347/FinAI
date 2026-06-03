@@ -62,26 +62,65 @@ runs, ~680 subagents). The structure is **execution-anchored**: agents *bracket*
 attack after — while the main loop runs the real backtests, so a claim never ships until it meets data. The
 self-improving **10-node agent fund** that productizes this loop is designed in [`research/ai-era-blueprint.md`](research/ai-era-blueprint.md).
 
-```
-                          ┌──────────────────── research/brief.md (goal + grounding + the 0–60 metric) ───────────────────┐
-                          │                                                                                              │
-   ┌──────────┐   ┌───────▼────────┐   ┌─────────────────┐   ┌──────────────────────┐   ┌──────────────┐   ┌────────────▼─────────┐
-   │  SCOUT   │──▶│   FORMALIZE    │──▶│    MAIN LOOP    │──▶│      RED-TEAM        │──▶│  SYNTHESIZE  │──▶│   IMPLEMENT + SHIP   │
-   │ N agents │   │ codeable spec  │   │ EXECUTES the    │   │ N adversaries attack │   │ panel ranks  │   │ register sleeve /    │
-   │ 1 idea   │   │ + TS skeleton  │   │ real backtest   │   │ the EXECUTED result: │   │ survivors;   │   │ allocator change /   │
-   │ each     │   │ + falsifier    │   │ (OOS · net-of-β │   │ look-ahead? regime-  │   │ honest verdict│   │ opportunity signal,  │
-   └──────────┘   └────────────────┘   │  · ρ-to-book)   │   │ concentration? cost? │   └──────────────┘   │ then re-validate     │
-        ▲                              │ + KILL-TESTS    │   │ survivorship? tail-ρ?│                       └──────────────────────┘
-        │                              └────────┬────────┘   └──────────┬───────────┘
-        └──────────────── the loop repeats per phase; the main loop's executed numbers are the ground truth ┘
+```mermaid
+flowchart TB
+    brief["📋 brief.md<br/>goal · grounding · the 0–60 metric"]
 
-   The 10 fleet runs (research/README.md):
-     1. Strategy Discovery (82)          6. Novel-Options + Universe (141)
-     2. Advanced High-Sharpe (115)       7. Options-First Regime Robustness (136)
-     3. Implementation Review (9)        8. Expanded-Universe (32)
-     4. Method Audit & Correction (21)   9. Diversification + Opportunity Signals (17)
-     5. Uncorrelated-Sleeve Discovery (114)  10. AI-Era System Design (8)
+    subgraph loop ["⚙️ The execution-anchored loop — agents bracket execution; the main-loop backtest is ground truth"]
+        direction LR
+        scout["SCOUT<br/>N agents · 1 idea each"]
+        formalize["FORMALIZE<br/>codeable spec + falsifier"]
+        execute["MAIN LOOP EXECUTES<br/>real walk-forward backtest<br/>OOS · net-of-β · ρ-to-book · kill-tests"]
+        redteam["RED-TEAM<br/>attack the EXECUTED result:<br/>look-ahead? regime? cost? survivorship? tail-ρ?"]
+        synth["SYNTHESIZE<br/>rank survivors · honest verdict"]
+        ship["IMPLEMENT + SHIP<br/>register + re-validate"]
+        scout --> formalize --> execute --> redteam --> synth --> ship
+        redteam -. "kill — most candidates die here" .-> scout
+    end
+    brief --> loop
+
+    subgraph fleets ["🤖 10 fleet runs · ~680 subagents · ≈32M tokens — click any node for its research"]
+        direction TB
+        f1["1 · Strategy Discovery · 82<br/>0 KEEP — orthogonality is scarce"]
+        f2["2 · Advanced High-Sharpe · 115<br/>re-derived the book + net-of-β honesty fix"]
+        f3["3 · Implementation Review · 9<br/>3 serious bugs fixed"]
+        f4["4 · Method Audit · 21<br/>reproduced the look-ahead bug 1.14 → 0.87"]
+        f5["5 · Uncorrelated Discovery · 114<br/>only 1 of 20 sleeves survived OOS"]
+        f6["6 · Novel-Options + Universe · 141<br/>Sharpe-2 = FALSE; built residual-momentum"]
+        f7["7 · Options-First Regime · 136<br/>0 clean BUILD — no new sleeve beats the book"]
+        f8["8 · Expanded-Universe · 32<br/>1 keeper commodity_trend + liquidity-screen fix"]
+        f9["9 · Diversification + Signals · 17<br/>no optimizer beats naive; built opportunity layer"]
+        f10["10 · AI-Era System Design · 8<br/>6-layer stack + 10-node agent fund"]
+        f1 --> f2 --> f3 --> f4 --> f5 --> f6 --> f7 --> f8 --> f9 --> f10
+    end
+    loop ==> fleets
+
+    book["📈 SHIPPED · 12-sleeve ARMS book + PutStrike VRP + opportunity signals<br/>OOS Sharpe ≈ 0.85 · MaxDD 13% vs SPY 34% · DSR-governed"]
+    blueprint["🧭 ai-era-blueprint.md<br/>honest path past 0.9 → ~1.2–1.3 OOS (projection)"]
+    fleets ==> book
+    f10 ==> blueprint
+
+    click brief "research/brief.md" "The research brief"
+    click f1 "research/strategy-universe.md" "Strategy Discovery (82)"
+    click f2 "research/advanced-strategies.md" "Advanced High-Sharpe (115)"
+    click f3 "research/red-team.md" "Implementation Review (9)"
+    click f4 "research/sharpe2-quest.md" "Method Audit (21)"
+    click f5 "research/sharpe2-quest.md" "Uncorrelated Discovery (114)"
+    click f6 "research/options-strategies.md" "Novel-Options + Universe (141)"
+    click f7 "research/regime-stability.md" "Options-First Regime (136)"
+    click f8 "research/expanded-universe.md" "Expanded-Universe (32)"
+    click f9 "research/diversification.md" "Diversification + Signals (17)"
+    click f10 "research/ai-era-blueprint.md" "AI-Era System Design (8)"
+    click book "research/results.md" "Executed results"
+    click blueprint "research/ai-era-blueprint.md" "The AI-era blueprint"
+
+    classDef ship fill:#0b3d2e,stroke:#34d399,color:#e6fffa;
+    classDef plan fill:#1e293b,stroke:#60a5fa,color:#dbeafe;
+    class book ship;
+    class blueprint plan;
 ```
+
+<sub>↑ Interactive on GitHub — **click any fleet node to open its research file**. Not rendering? The same 10 runs are indexed in [`research/README.md`](research/README.md).</sub>
 
 **What the fleets proved (honestly):** ~0.9 OOS Sharpe is the ceiling for free daily data + no leverage; the
 diversification win is **adding orthogonal return streams (the VRP/put sleeve) + a light adaptive allocator**,
