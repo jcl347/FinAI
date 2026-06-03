@@ -197,9 +197,20 @@ mirrors *every* session to the web).
       code review fixed 2 critical sim/live divergences** (long-only/short clamp + universe-floor) — deployed book
       now provably == validated book. **Final: full 0.91, OOS 0.86, MaxDD 12.9%, net-β +0.18.** Genuine L/S tested
       → measured WORSE (OOS 0.76) → long-only retained.
+- [x] **Diversification + opportunity-signal layer** ([research/diversification.md](research/diversification.md)):
+      foundational allocators A/B'd (HRP/min-var/MDP all lose to naive equal-risk — DeMiguel 2009); built the
+      **Investment-Opportunity Signal** layer (`src/lib/signals/opportunity.ts` → daily run → `quant_signals` →
+      `/api/quant/*` → UI) + the VRP live-feedback seam.
+- [x] **Bias governance** — **Deflated/Probabilistic Sharpe Ratio** (Bailey-López de Prado) in `metrics.ts` +
+      `scripts/backtest/deflated.ts`: quantifies the multiple-testing bias (PSR-vs-zero ~90–95%; DSR keeps searched
+      sleeves small). The framework's biggest unaddressed bias, now measured.
+- [x] **AI-era system blueprint** ([research/ai-era-blueprint.md](research/ai-era-blueprint.md), 8-expert fleet):
+      6-layer stack + the **10-node self-improving agent fund**; honest projection 0.91→**~1.2–1.3 OOS** (cons. ~1.0,
+      opt. ~1.5) over 12–18 months with paid data + AI methods; **2.0 still not reachable**; Phase-0 first move (DSR
+      governance) shipped.
 - [ ] Fold Advanced-fleet BUILD sleeves (ML-concordance gate, narrow style-pair reversion) into the registry
-- [ ] Wire the orthogonality guard (corr-to-core / rolling-β) + drawdown circuit-breaker (specced in red-team.md)
-- [ ] (Optional) genuine high-Sharpe levers need a DIFFERENT toolkit (paid point-in-time/options data) — see expanded-universe.md
+- [ ] Phase-0 of the blueprint: CPCV+PBO harness · LightGBM meta-learner over the 12 sleeves · EDGAR Form-4 + FRED features
+- [ ] (Roadmap) paid point-in-time/options data + the continuous agent fund — the honest path past ~0.9 (see ai-era-blueprint.md)
 
 _Generated with Claude Code. All quantitative claims are from executed walk-forward backtests on real
 public data; nulls are reported as faithfully as the wins._

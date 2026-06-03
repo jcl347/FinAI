@@ -57,9 +57,10 @@ Data: yahoo-finance2 (quotes, options, OHLCV, macro) . FRED . Neon Postgres (per
 
 ## Agent fleet (how the strategies were discovered, stress-tested & validated)
 
-Every strategy in this system was discovered and adversarially validated by **agent orchestration** (9 fleet
-runs, ~670 subagents). The structure is **execution-anchored**: agents *bracket* the work — ideate before,
-attack after — while the main loop runs the real backtests, so a claim never ships until it meets data.
+Every strategy in this system was discovered and adversarially validated by **agent orchestration** (10 fleet
+runs, ~680 subagents). The structure is **execution-anchored**: agents *bracket* the work — ideate before,
+attack after — while the main loop runs the real backtests, so a claim never ships until it meets data. The
+self-improving **10-node agent fund** that productizes this loop is designed in [`research/ai-era-blueprint.md`](research/ai-era-blueprint.md).
 
 ```
                           ┌──────────────────── research/brief.md (goal + grounding + the 0–60 metric) ───────────────────┐
@@ -74,18 +75,47 @@ attack after — while the main loop runs the real backtests, so a claim never s
         │                              └────────┬────────┘   └──────────┬───────────┘
         └──────────────── the loop repeats per phase; the main loop's executed numbers are the ground truth ┘
 
-   The 9 fleet runs (research/README.md):
+   The 10 fleet runs (research/README.md):
      1. Strategy Discovery (82)          6. Novel-Options + Universe (141)
      2. Advanced High-Sharpe (115)       7. Options-First Regime Robustness (136)
      3. Implementation Review (9)        8. Expanded-Universe (32)
      4. Method Audit & Correction (21)   9. Diversification + Opportunity Signals (17)
-     5. Uncorrelated-Sleeve Discovery (114)
+     5. Uncorrelated-Sleeve Discovery (114)  10. AI-Era System Design (8)
 ```
 
 **What the fleets proved (honestly):** ~0.9 OOS Sharpe is the ceiling for free daily data + no leverage; the
 diversification win is **adding orthogonal return streams (the VRP/put sleeve) + a light adaptive allocator**,
 NOT a fancier optimizer (HRP / min-variance / max-diversification all *lost* to naive equal-risk — DeMiguel 2009).
 Full trail: [`research/README.md`](research/README.md) and the per-fleet `research/*.md` files.
+
+## Bias governance & honesty (what makes the numbers trustworthy)
+
+A strategy factory that tests many candidates and keeps the winners has a built-in **multiple-testing bias**. This
+repo addresses it explicitly: a no-look-ahead engine (`data ≤ date`), **net-of-beta** gating (a sleeve can't be
+credited for market beta), out-of-sample + recent-holdout splits, per-year + 3× cost kill-tests, and — the formal
+correction — the **Deflated / Probabilistic Sharpe Ratio** (Bailey & López de Prado;
+[`src/lib/backtest/metrics.ts`](src/lib/backtest/metrics.ts), report: `scripts/backtest/deflated.ts`). The honest
+read it produces: the book's edge over *zero* is statistically real (PSR ~90–95%), but the searched sleeves carry a
+multiple-testing haircut, which is **why they are sized small**. The remaining known biases (survivorship from a
+survivor-only universe; a single-operator adversary) are documented, not hidden — see
+[`research/diversification.md`](research/diversification.md) and the bias audit in the project history.
+
+## Roadmap — beyond the ~0.9 ceiling (the modern-AI-era blueprint)
+
+Beating ~0.9 OOS is a **data + AI-methods** problem, not a tuning one. An 8-expert design fleet produced the
+honest, math-grounded blueprint in [`research/ai-era-blueprint.md`](research/ai-era-blueprint.md): a six-layer
+stack (point-in-time + alt-data fabric → an LLM/foundation-model/GNN signal tower → the proven light allocator with
+a factor-neutrality guard → impact-aware execution → a self-improving **10-node agent fund** → a load-bearing
+CPCV+DSR validation layer). The honest projection (NOT a claim — projections pending a DSR-gated walk-forward):
+
+| Path | Data | Projected OOS Sharpe |
+|---|---|---|
+| Conservative | free/cheap (EDGAR fundamentals, Form-4 insiders, FRED) | ~1.00–1.05 |
+| Base | + paid options chains (a real VRP sleeve) + intraday | ~1.15–1.25 |
+| Optimistic | + alt-data fusion, RL execution, ρ̄ holds in stress | ~1.35–1.50 |
+
+**Sharpe 2.0 stays out of reach** (needs ~9 uncorrelated 0.6-Sharpe streams; the realistic toolkit tops out
+~1.4–1.5). The highest-ROI first move — the DSR validation governance — is **already shipped**.
 
 ## Quick start
 

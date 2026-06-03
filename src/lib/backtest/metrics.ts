@@ -184,3 +184,79 @@ export function curveCorrelation(a: EquityPoint[], b: EquityPoint[]): number {
   if (da === 0 || dbb === 0) return 0;
   return round2(num / Math.sqrt(da * dbb));
 }
+
+// ── Deflated / Probabilistic Sharpe Ratio (Bailey & López de Prado 2014) ──
+// The bias-governance the framework was missing: a strategy "factory" that tests N candidates on the
+// same window and keeps the best has a built-in MULTIPLE-TESTING bias — some winners survive by chance.
+// PSR corrects a Sharpe for short samples + non-normal returns; DSR additionally deflates the hurdle by
+// the EXPECTED MAXIMUM Sharpe across N independent trials, so a shipped sleeve must beat what random
+// selection over N tries would have produced. DSR > 0.95 ⇒ the edge is unlikely to be a selection artifact.
+
+/** Abramowitz-Stegun erf approximation. */
+function erf(x: number): number {
+  const t = 1 / (1 + 0.3275911 * Math.abs(x));
+  const y = 1 - (((((1.061405429 * t - 1.453152027) * t) + 1.421413741) * t - 0.284496736) * t + 0.254829592) * t * Math.exp(-x * x);
+  return x >= 0 ? y : -y;
+}
+export function normalCdf(z: number): number {
+  return 0.5 * (1 + erf(z / Math.SQRT2));
+}
+/** Inverse standard-normal CDF (Acklam's rational approximation). */
+export function normalInv(p: number): number {
+  if (p <= 0) return -Infinity;
+  if (p >= 1) return Infinity;
+  const a = [-3.969683028665376e1, 2.209460984245205e2, -2.759285104469687e2, 1.38357751867269e2, -3.066479806614716e1, 2.506628277459239];
+  const b = [-5.447609879822406e1, 1.615858368580409e2, -1.556989798598866e2, 6.680131188771972e1, -1.328068155288572e1];
+  const c = [-7.784894002430293e-3, -3.223964580411365e-1, -2.400758277161838, -2.549732539343734, 4.374664141464968, 2.938163982698783];
+  const d = [7.784695709041462e-3, 3.224671290700398e-1, 2.445134137142996, 3.754408661907416];
+  const pl = 0.02425;
+  let q: number, r: number;
+  if (p < pl) { q = Math.sqrt(-2 * Math.log(p)); return (((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1); }
+  if (p <= 1 - pl) { q = p - 0.5; r = q * q; return (((((a[0] * r + a[1]) * r + a[2]) * r + a[3]) * r + a[4]) * r + a[5]) * q / (((((b[0] * r + b[1]) * r + b[2]) * r + b[3]) * r + b[4]) * r + 1); }
+  q = Math.sqrt(-2 * Math.log(1 - p)); return -(((((c[0] * q + c[1]) * q + c[2]) * q + c[3]) * q + c[4]) * q + c[5]) / ((((d[0] * q + d[1]) * q + d[2]) * q + d[3]) * q + 1);
+}
+
+export interface SharpeMoments {
+  srDaily: number; // per-period (daily) Sharpe — NOT annualized (the DSR formula is per-observation)
+  n: number;       // number of return observations
+  skew: number;
+  kurt: number;    // non-excess kurtosis (3 = normal)
+}
+
+/** Per-period Sharpe + higher moments of an equity curve's daily returns (inputs to PSR/DSR). */
+export function sharpeMoments(curve: EquityPoint[], rfAnnual = 0): SharpeMoments {
+  const rets: number[] = [];
+  for (let i = 1; i < curve.length; i++) if (curve[i - 1].equity > 0) rets.push(curve[i].equity / curve[i - 1].equity - 1);
+  const n = rets.length;
+  if (n < 20) return { srDaily: 0, n, skew: 0, kurt: 3 };
+  const rfD = rfAnnual / 252;
+  const m = rets.reduce((a, b) => a + b, 0) / n;
+  const sd = Math.sqrt(rets.reduce((a, b) => a + (b - m) ** 2, 0) / (n - 1));
+  if (sd === 0) return { srDaily: 0, n, skew: 0, kurt: 3 };
+  const srDaily = (m - rfD) / sd;
+  const skew = rets.reduce((a, b) => a + ((b - m) / sd) ** 3, 0) / n;
+  const kurt = rets.reduce((a, b) => a + ((b - m) / sd) ** 4, 0) / n;
+  return { srDaily, n, skew, kurt };
+}
+
+/** Probabilistic Sharpe Ratio: P(true Sharpe > benchmarkSrDaily) given sample length + non-normality. */
+export function probabilisticSharpe(m: SharpeMoments, benchmarkSrDaily = 0): number {
+  const { srDaily: sr, n, skew, kurt } = m;
+  if (n < 20) return 0;
+  const denom = Math.sqrt(Math.max(1e-9, 1 - skew * sr + ((kurt - 1) / 4) * sr * sr));
+  return normalCdf(((sr - benchmarkSrDaily) * Math.sqrt(n - 1)) / denom);
+}
+
+/**
+ * Deflated Sharpe Ratio: the PSR against the expected-MAXIMUM Sharpe across `nTrials` independent trials
+ * with cross-trial Sharpe variance `varTrialSrDaily` (per-period units). The honest hurdle for a sleeve
+ * selected from a factory of nTrials candidates. Returns the DSR probability + the deflated hurdle.
+ */
+export function deflatedSharpe(m: SharpeMoments, nTrials: number, varTrialSrDaily: number): { dsr: number; srStarDaily: number; psr0: number } {
+  const gamma = 0.5772156649015329; // Euler-Mascheroni
+  const N = Math.max(2, nTrials);
+  const z1 = normalInv(1 - 1 / N);
+  const z2 = normalInv(1 - 1 / (N * Math.E));
+  const srStar = Math.sqrt(Math.max(0, varTrialSrDaily)) * ((1 - gamma) * z1 + gamma * z2);
+  return { dsr: round2(probabilisticSharpe(m, srStar)), srStarDaily: srStar, psr0: round2(probabilisticSharpe(m, 0)) };
+}
