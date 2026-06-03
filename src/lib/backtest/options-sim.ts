@@ -136,10 +136,13 @@ export function simulateUnderlying(bars: Bar[], cfg: OptionsSleeveConfig): Equit
     // Mark the open position. Vol spikes raise the mark (hurt the short) — honest about the tail.
     const daysHeld = i - pos.entryIdx;
     const Tleft = Math.max(0, (pos.expiryDays - daysHeld) / 365);
-    // Mark at the CURRENT IV estimate (RV + VRP) — symmetric, no upward bias. A genuine vol spike
-    // raises rvNow and thus the mark (showing the short-gamma loss); calm lets theta decay win.
+    // Mark at REALIZED vol only (NOT RV+VRP). Audit fix: re-adding the VRP at every mark made the
+    // entry credit (priced at RV+VRP) and the close value cancel, so only spread-theta was harvested
+    // and the documented VRP edge was destroyed (CSP came out negative vs the real PUT-write index's
+    // ~+0.5). Marking at RV lets the credit's embedded VRP be captured as the position decays, while a
+    // genuine vol spike still raises rvNow and shows the short-gamma loss.
     const rvNow = annualizedVol(closes.slice(0, i + 1), cfg.rvWindow) || pos.sigmaEntry;
-    const sigmaMark = Math.max(0.05, rvNow + cfg.vrpVolPoints);
+    const sigmaMark = Math.max(0.05, rvNow);
     const closeValueToHolder = structureValue(pos, S, Tleft, cfg.rfAnnual, sigmaMark); // ≤0 for net-short
     const pnlPerShare = pos.creditPerShare + closeValueToHolder; // credit kept + cost to close (negative)
     const markedEquity = 1 + pnlPerShare / pos.collateralPerShare; // relative to this cycle's entry

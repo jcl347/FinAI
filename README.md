@@ -17,16 +17,19 @@ simulated-trade tracking. **Simulation only — no real orders are placed.**
    research-validated 8-factor model (tastytrade, DataDrivenOptions, CBOE, Schwab research), a 14-rule
    decision checklist, and a separate put-trade simulation journal.
 
-## Measured performance (walk-forward, real data, conservative costs)
+## Measured performance (walk-forward, **out-of-sample-validated**, conservative costs)
 
-| Portfolio | CAGR | Sharpe | MaxDD | Calmar |
-|---|---|---|---|---|
-| SPY buy & hold | 14.2% | 0.84 | 33.7% | 0.42 |
-| **ARMS combined** | 7.2% | **1.14** | **~10%** | 0.73 |
+| Portfolio | Sharpe | MaxDD | Calmar |
+|---|---|---|---|
+| SPY buy & hold | 0.84 | 33.7% | 0.42 |
+| **ARMS — out-of-sample (>2021)** | **0.95** | **9.65%** | **0.77** |
 
-The win is risk-adjusted return and capital preservation — roughly double SPY's Sharpe at a third of the
-drawdown. Honest nulls, the full research trail, and why a Sharpe of 2 is **not** reachable here without
-leverage or paid options data are documented in [`research/`](research/) and [`CLAUDE.md`](CLAUDE.md).
+The honest, out-of-sample Sharpe is **~0.95** — roughly SPY's risk-adjusted return at **~⅓ the drawdown**.
+The win is capital preservation, not raw Sharpe over SPY. (An earlier "1.14" was found by an internal method
+audit to be inflated by a look-ahead bug + survivorship bias and was corrected.) A 114-agent search confirmed
+**Sharpe 2.0 is not reachable** from free daily data with no leverage and no real options chains — leverage
+can't help (Sharpe is scale-invariant). Full faithful trail, the mistakes corrected, and what 2.0 would
+actually take: [`research/sharpe2-quest.md`](research/sharpe2-quest.md) and [`CLAUDE.md`](CLAUDE.md).
 
 ## Architecture
 

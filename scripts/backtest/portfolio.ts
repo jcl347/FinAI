@@ -101,9 +101,13 @@ async function main() {
     if (s.key === "st_reversal" || s.key === "ts_trend") continue; // drop the nulls from the funded set
     sleeves.push({ key: s.key, family: FAM[s.key] ?? "offensive", prior: PRIOR[s.key] ?? 0.5, curve: runBacktest(s, data, { initialCapital: INITIAL }).equityCurve });
   }
-  // Options VRP sleeve (the high-Sharpe short-vol core).
-  const cspCurve = runOptionsSleeve(data.calendar, data.bars, STABLE, { ...DEFAULT_OPTIONS_CONFIG, structure: "csp" });
-  sleeves.push({ key: "csp_vrp", family: "vol_premium", prior: PRIOR.csp_vrp, curve: cspCurve });
+  // Synthetic options VRP sleeve: EXCLUDED from the measured book. The BS synthesis swings from
+  // −0.4 to +1.55 Sharpe on an unobservable marking assumption (audit Critical), so it cannot be
+  // honestly backtested with free data. The options VRP is real LIVE (the put-scorer on the real
+  // chain) but is ASSERT-only for the backtest. Uncomment to inspect, never to fund.
+  // const cspCurve = runOptionsSleeve(data.calendar, data.bars, STABLE, { ...DEFAULT_OPTIONS_CONFIG, structure: "csp" });
+  // sleeves.push({ key: "csp_vrp", family: "vol_premium", prior: PRIOR.csp_vrp, curve: cspCurve });
+  void runOptionsSleeve; void DEFAULT_OPTIONS_CONFIG; void STABLE;
 
   // Aligned returns per sleeve.
   const rets = new Map(sleeves.map((s) => [s.key, dailyReturns(alignedEquity(s.curve, data.calendar))]));
@@ -118,17 +122,19 @@ async function main() {
 
   for (let i = start; i < N; i++) {
     if ((i - start) % 5 === 0) {
-      // regime
+      // NO-LOOK-AHEAD: weights that earn day i's return are built ONLY from info through day i-1.
+      // (Audit fix — reading day i's own returns/VIX inflated Sharpe 1.14→0.87 by dodging crashes it had already taken.)
+      const j = i - 1;
       let sma200 = 0, c = 0;
-      for (let k = i - 199; k <= i; k++) if (spyClose[k] != null) { sma200 += spyClose[k]!; c++; }
-      const spyAbove200 = c > 150 ? (spyClose[i] ?? 0) > sma200 / c : true;
-      const vnow = vix[i];
+      for (let k = j - 199; k <= j; k++) if (k >= 0 && spyClose[k] != null) { sma200 += spyClose[k]!; c++; }
+      const spyAbove200 = c > 150 ? (spyClose[j] ?? 0) > sma200 / c : true;
+      const vnow = vix[j];
       const crisis = vnow != null && vnow >= 35;
       const riskOff = crisis || !spyAbove200;
 
       const raw = new Map<string, number>();
       for (const s of sleeves) {
-        const st = trailingSharpeVol(rets.get(s.key)!, i, WINDOW);
+        const st = trailingSharpeVol(rets.get(s.key)!, j, WINDOW);
         const sampleTrust = Math.min(1, st.n / 60);
         const blended = 0.3 * sampleTrust * st.sharpe + (1 - 0.3 * sampleTrust) * s.prior;
         let score = 0;
@@ -142,9 +148,9 @@ async function main() {
       const gross = crisis ? 0.5 : riskOff ? 0.85 : 1.0;
       weights = new Map();
       if (sum > 0) for (const [k, v] of raw) weights.set(k, Math.min(maxW, (v / sum) * gross));
-      // vol-target via sleeve return covariance
+      // vol-target via sleeve return covariance (also through j only)
       const active = [...weights.keys()].filter((k) => (weights.get(k) ?? 0) > 0);
-      const pv = portVol(active, weights, rets, i, 60);
+      const pv = portVol(active, weights, rets, j, 60);
       const scale = pv > 0 ? Math.max(0.25, Math.min(1, VOL_TARGET / pv)) : Math.max(0.25, Math.min(1, VOL_TARGET / 0.12));
       for (const k of active) weights.set(k, (weights.get(k) ?? 0) * scale);
     }

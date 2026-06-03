@@ -24,7 +24,10 @@ export const DEFAULT_COSTS: CostModel = {
   spreadBpsPerSide: 3, // ~6 bps round trip on liquid large-caps/ETFs
   slippageBpsPerSide: 2, // ~4 bps round trip impact for small retail size
   commissionPerTrade: 0,
-  shortBorrowAnnualBps: 50, // 0.50%/yr borrow on easy-to-borrow large caps
+  // Audit fix: the residual-momentum SHORT decile selects weak / falling / recently-IPO'd / high-IV
+  // names — exactly the hard-to-borrow cohort (COIN/AFRM/RIVN/CVNA/SMCI/MSTR…) whose borrow runs
+  // 100–1000+bps, not the 50bps of easy-to-borrow large caps. 150bps is a conservative blended rate.
+  shortBorrowAnnualBps: 150,
   optionCommissionPerContract: 0.65,
 };
 

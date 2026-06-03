@@ -13,6 +13,8 @@ import { crossAssetTrend } from "./crossasset";
 import { tailHedge } from "./tailhedge";
 import { factorMomentum } from "./factormom";
 import { residualMomentum } from "./residmom";
+import { longTermReversal } from "./ltreversal";
+import { sectorLongTermReversal } from "./sectorltrev";
 
 export const STRATEGIES: Strategy[] = [
   // Cost-surviving long-only equity sleeves (proven in results.md)
@@ -23,8 +25,10 @@ export const STRATEGIES: Strategy[] = [
   // Genuinely ORTHOGONAL diversifiers (the Sharpe-lift additions)
   crossAssetTrend,
   tailHedge,
-  // Market-neutral residual-momentum L/S (advanced-options fleet's top new survivor, ρ≈0.05)
+  // Market-neutral L/S diversifiers (low/negative ρ to the momentum-heavy book)
   residualMomentum,
+  longTermReversal,
+  sectorLongTermReversal,
   // Kept for completeness; allocator starves it (cost-killed null)
   timeSeriesTrend,
   shortTermReversal,

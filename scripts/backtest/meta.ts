@@ -36,6 +36,7 @@ const PRIORS: Record<string, number> = {
   sector_rotation: 0.66,
   ts_trend: 0.61,
   cross_asset_trend: 0.57,
+  resid_momentum: 0.44,
   st_reversal: 0.22,
   tail_hedge: 0.06,
 };

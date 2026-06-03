@@ -41,24 +41,31 @@ live, so the simulation can never silently diverge from what was tested. Full de
 
 ---
 
-## 3. Headline results (executed, walk-forward, conservative costs)
+## 3. Headline results (executed, walk-forward, **out-of-sample-validated**, conservative costs)
 
-| Portfolio | CAGR | Vol | Sharpe | MaxDD | Calmar |
-|---|---|---|---|---|---|
-| SPY buy & hold | 14.2% | 17.8% | 0.84 | 33.7% | 0.42 |
-| Naive equal-weight ensemble | 10.2% | 10.9% | 0.95 | 18.5% | 0.55 |
-| ARMS (adaptive + 10% vol target) | 6.7% | 8.1% | 0.85 | 12.2% | 0.55 |
-| **Combined (expanded ~165-name universe + residual-momentum L/S + return-level vol-target)** | 7.2% | 6.3% | **1.14** | 9.9% | 0.73 |
+> A method audit ([research/sharpe2-quest.md](research/sharpe2-quest.md)) found the earlier "1.14"
+> was **inflated by a look-ahead bug** (reproduced: 1.14→0.87), survivorship bias, and in-sample tuning.
+> Corrected and re-validated out of sample, the **honest** numbers are below.
 
-**On the later Sharpe-2 goal — honestly NOT reachable** from long-only/defined-risk, no-leverage,
-free-daily-data, *offline-backtestable* sleeves. The push (expanded universe + a purpose-built synthetic
-options-VRP engine) lifted the *measured* combined Sharpe to **1.13 (MaxDD 8.7%, Calmar 0.80)** — a real
-gain — but the high-Sharpe options VRP **cannot be backtested honestly** without paid historical chains: a
-conservative Black-Scholes synthesis of put-selling (even trend-filtered) is break-even-to-negative, and the
-self-tracking floor correctly *benched* it. Reaching 2 needs **leverage** (outside the ≤1.0 mandate) or an
-**over-optimistic options assumption** — marketing, not measurement. The options edge is real *live* (the
-existing PutStrike put-scorer on the real chain) → **BUILD-for-live / ASSERT-for-backtest**. See
-[research/results.md](research/results.md) Run 3 + [research/options-strategies.md](research/options-strategies.md).
+| Portfolio | Sharpe | MaxDD | Calmar | net-of-β |
+|---|---|---|---|---|
+| SPY buy & hold | 0.84 | 33.7% | 0.42 | — |
+| ARMS — full sample (executed, return-level combiner — `portfolio-summary.json`) | 0.92 | 11.8% | 0.44 | 0.28 |
+| ARMS — in-sample (≤2021, `validate.ts`) | 1.26 | 12.7% | 0.89 | 0.60 |
+| **ARMS — OUT-OF-SAMPLE (>2021), the trustworthy figure** | **0.95** | **9.65%** | **0.77** | 0.28 |
+
+> Numbers are the **executed** figures (return-level combiner full-sample; `validate.ts` for the in/out-of-sample
+> split). A *position-level* meta combiner reads higher full-sample (~1.08–1.15, method-dependent); the
+> conservative return-level/OOS figures are the ones quoted. The **1.26 in-sample → 0.95 OOS** drop is the
+> in-sample inflation the audit removed; diversifiers then lifted OOS 0.91→0.95.
+
+**Honest read:** the OOS Sharpe (**~0.95**) is the number to trust — roughly SPY's risk-adjusted return at
+**~⅓ the drawdown**. The win is *risk*, not raw Sharpe over SPY. **Sharpe 2.0 is NOT reachable** from this
+toolkit (free daily OHLCV, no leverage, no real options chains): a 114-agent search found only **one** of 20
+candidate sleeves with positive out-of-sample Sharpe; the math needs ~9 uncorrelated 0.6-Sharpe sleeves that
+simply don't exist in this data. **Leverage can't help — Sharpe is scale-invariant.** Reaching 2.0 needs a
+different toolkit (paid point-in-time/delisting data, real options chains, or intraday/alt-data). Full,
+faithful detail incl. the mistakes corrected: [research/sharpe2-quest.md](research/sharpe2-quest.md).
 
 **Honest read:** for a long-only, no-leverage, free-data daily system the Sharpe lift over SPY is
 modest; the dramatic win is **risk** — drawdown −64%, volatility −55%, Calmar +31%. The 221-day
@@ -83,7 +90,7 @@ the work used the **local, in-workflow** layer (no upload required). Security mo
 - **Fleet 1 — Strategy Discovery** (82 agents, 3.2M tokens): 12 strategy families → 33 candidates →
   14 vetted (formalize → 3 red-team lenses → harsh 0–60 score). Result: **0 KEEP, all REVISE/CUT** —
   no single anomaly is a slam-dunk; orthogonality is the scarce resource. → [research/strategy-universe.md](research/strategy-universe.md).
-- **Fleet 2 — Advanced High-Sharpe Design** (~90 agents): design exact orthogonal sleeves + daily
+- **Fleet 2 — Advanced High-Sharpe Design** (115 agents): design exact orthogonal sleeves + daily
   feedback loops → 4 red-team lenses (incl. net-of-beta after-cost Sharpe, tail-orthogonality) →
   score → idea-sharing synthesis panel → assembler. → [research/advanced-strategies.md](research/advanced-strategies.md).
 - **Empirical execution (this session):** built the backtest harness + sleeves and **ran them on

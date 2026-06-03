@@ -21,7 +21,9 @@
  * - tastytrade/tastylive: 45 DTE, 16 delta (1 SD), manage at 50% profit, 21 DTE management
  * - DataDrivenOptions: 20 delta short / 13 delta long optimal for theta capture (35-45 DTE)
  * - Schwab/Barchart: IV Rank > 30 + IV Percentile > 50 (56.8% win rate vs 48.2% unfiltered)
- * - Spintwig SPY backtests: 16 delta with leverage has better Sharpe than 30 delta
+ * - Spintwig SPY backtests: 16 delta has a different (higher-Sharpe) return distribution than 30 delta.
+ *   NOTE: leverage does NOT raise Sharpe — Sharpe is scale-invariant (leverage scales excess return and
+ *   vol equally, and after borrow cost it is strictly lower). Sizing to a vol target changes risk, not Sharpe.
  * - CBOE PUT index: lower-beta underlyings have higher put-selling win rates; VIX 15-25 optimal
  * - tastytrade: large-cap stocks reduce assignment gap risk
  *
