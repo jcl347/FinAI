@@ -13,7 +13,8 @@
  */
 import type { Strategy, StrategyContext, StrategySignal } from "./types";
 import { rsi, sma } from "./indicators";
-import { isEquity, isBroadETF } from "./universe";
+import { isBroadETF } from "./universe";
+import { liquidEquities } from "./screens";
 
 const MAX_POSITIONS = 10;
 
@@ -29,8 +30,8 @@ export const shortTermReversal: Strategy = {
   instrument: "equity",
   generate(ctx: StrategyContext): StrategySignal {
     const cands: { s: string; r: number }[] = [];
-    for (const s of ctx.universe) {
-      if (!isEquity(s) && !isBroadETF(s)) continue;
+    const pool = [...liquidEquities(ctx, 200), ...ctx.universe.filter(isBroadETF)];
+    for (const s of pool) {
       const c = ctx.closes(s);
       const r = rsi(c, 2);
       const sm = sma(c, 200);

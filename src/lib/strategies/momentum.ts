@@ -15,7 +15,7 @@
  */
 import type { Strategy, StrategyContext, StrategySignal } from "./types";
 import { momentumSkip } from "./indicators";
-import { isEquity } from "./universe";
+import { liquidEquities } from "./screens";
 
 export const crossSectionalMomentum: Strategy = {
   key: "xs_momentum",
@@ -31,8 +31,7 @@ export const crossSectionalMomentum: Strategy = {
     if (ctx.regime.spyAbove200 === false) {
       return { weights: [], confidence: 0.2, notes: "SPY<200d SMA — risk-off, hold cash" };
     }
-    const scored = ctx.universe
-      .filter(isEquity)
+    const scored = liquidEquities(ctx, 200)
       .map((s) => ({ s, m: momentumSkip(ctx.closes(s), 252, 21) }))
       .filter((x): x is { s: string; m: number } => x.m != null);
     if (scored.length < 10) return { weights: [], confidence: 0.1 };

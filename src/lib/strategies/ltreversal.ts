@@ -14,7 +14,7 @@
  */
 import type { Strategy, StrategyContext, StrategySignal } from "./types";
 import { momentumSkip } from "./indicators";
-import { isEquity } from "./universe";
+import { liquidEquities } from "./screens";
 
 export const longTermReversal: Strategy = {
   key: "lt_reversal",
@@ -28,8 +28,7 @@ export const longTermReversal: Strategy = {
   instrument: "equity",
   generate(ctx: StrategyContext): StrategySignal {
     const scored: { s: string; pastRet: number }[] = [];
-    for (const s of ctx.universe) {
-      if (!isEquity(s)) continue;
+    for (const s of liquidEquities(ctx, 200)) {
       const c = ctx.closes(s);
       if (c.length < 780) continue;
       const pastRet = momentumSkip(c, 756, 252); // return from t-3y to t-1y

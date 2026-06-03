@@ -15,7 +15,7 @@
  */
 import type { Strategy, StrategyContext, StrategySignal } from "./types";
 import { momentumSkip, simpleReturns, beta, annualizedVol } from "./indicators";
-import { isEquity } from "./universe";
+import { liquidEquities } from "./screens";
 
 export const residualMomentum: Strategy = {
   key: "resid_momentum",
@@ -35,8 +35,7 @@ export const residualMomentum: Strategy = {
     if (spyMom == null) return { weights: [], confidence: 0.1 };
 
     const scored: { s: string; resid: number; idioVol: number }[] = [];
-    for (const s of ctx.universe) {
-      if (!isEquity(s)) continue;
+    for (const s of liquidEquities(ctx, 200)) {
       const c = ctx.closes(s);
       if (c.length < 260) continue;
       const mom = momentumSkip(c, 252, 21);

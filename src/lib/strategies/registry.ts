@@ -15,6 +15,7 @@ import { factorMomentum } from "./factormom";
 import { residualMomentum } from "./residmom";
 import { longTermReversal } from "./ltreversal";
 import { sectorLongTermReversal } from "./sectorltrev";
+import { commodityTrend } from "./newtrend";
 
 export const STRATEGIES: Strategy[] = [
   // Cost-surviving long-only equity sleeves (proven in results.md)
@@ -29,6 +30,8 @@ export const STRATEGIES: Strategy[] = [
   residualMomentum,
   longTermReversal,
   sectorLongTermReversal,
+  // Real-asset diversifier (expanded-universe scout → red-team KEEP_SMALL: low ρ, benign tail, inflation hedge)
+  commodityTrend,
   // Kept for completeness; allocator starves it (cost-killed null)
   timeSeriesTrend,
   shortTermReversal,

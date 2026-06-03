@@ -50,6 +50,9 @@ export interface AllocatorConfig {
   minSampleDays: number;
   /** Max share of gross any single strategy may take. */
   maxWeightPerStrategy: number;
+  /** Optional per-strategy max-weight overrides — binds the red-team's KEEP_SMALL on weak /
+   *  regime-concentrated diversifiers so a hot trailing streak can't over-weight them. */
+  maxWeightByKey?: Record<string, number>;
   /** Total gross to deploy in normal regime (≤1 = no leverage). Cash is the remainder. */
   targetGross: number;
   /** Gross in a slow bear (SPY<200d). Kept near 1.0 — the sleeves already self-de-risk, so
@@ -88,6 +91,14 @@ export const DEFAULT_ALLOCATOR: AllocatorConfig = {
   sharpeFloor: -0.15, // bench only clearly-broken sleeves (e.g. the cost-killed reversal)
   minSampleDays: 40,
   maxWeightPerStrategy: 0.35,
+  // Per-sleeve cap: ONLY the regime-concentrated commodity_trend is capped (red-team KEEP_SMALL) so a
+  // hot 2024-26 metals streak can't size it up beyond what was validated. The market-neutral L/S
+  // diversifiers (resid_momentum/lt_reversal/sector_lt_reversal) are deliberately NOT capped — their
+  // LOW vol earns a large inverse-vol weight, and that is exactly the decorrelation that lifts the
+  // book; measured, capping them HURT (full 0.92→0.80, MaxDD 12.4%→15.2%) by concentrating into beta.
+  maxWeightByKey: {
+    commodity_trend: 0.1,
+  },
   targetGross: 1.0,
   riskOffGross: 0.95, // slow bear: don't double-de-gross; sleeves self-de-risk
   crisisGross: 0.6, // acute crisis: cut book-level gross
@@ -196,9 +207,10 @@ export function allocateStrategies(
     }
   }
 
-  // Normalize positive scores to targetGross, then cap per strategy and renormalize.
+  // Normalize positive scores to targetGross, then cap per strategy (per-key override or global) and renormalize.
+  const capOf = (k: string) => cfg.maxWeightByKey?.[k] ?? cfg.maxWeightPerStrategy;
   let weights = normalizeToGross(rawScores, targetGross);
-  weights = capAndRenormalize(weights, cfg.maxWeightPerStrategy, targetGross);
+  weights = capAndRenormalize(weights, capOf, targetGross);
 
   let grossDeployed = 0;
   for (const d of detail) {
@@ -223,26 +235,27 @@ function normalizeToGross(scores: Map<string, number>, gross: number): Map<strin
   return out;
 }
 
-function capAndRenormalize(weights: Map<string, number>, cap: number, gross: number): Map<string, number> {
-  // Iteratively cap then redistribute the excess to uncapped strategies.
+function capAndRenormalize(weights: Map<string, number>, capOf: (k: string) => number, gross: number): Map<string, number> {
+  // Iteratively cap (per-key) then redistribute the excess to strategies with remaining room.
   const out = new Map(weights);
-  for (let iter = 0; iter < 5; iter++) {
+  for (let iter = 0; iter < 6; iter++) {
     let excess = 0;
     const uncapped: string[] = [];
     for (const [k, v] of out) {
+      const cap = capOf(k);
       if (v > cap) {
         excess += v - cap;
         out.set(k, cap);
-      } else if (v > 0) {
+      } else if (v > 0 && v < cap) {
         uncapped.push(k);
       }
     }
     if (excess <= 1e-9 || uncapped.length === 0) break;
-    const room = uncapped.reduce((a, k) => a + (cap - (out.get(k) ?? 0)), 0);
+    const room = uncapped.reduce((a, k) => a + (capOf(k) - (out.get(k) ?? 0)), 0);
     if (room <= 1e-9) break;
     for (const k of uncapped) {
       const cur = out.get(k) ?? 0;
-      out.set(k, cur + excess * ((cap - cur) / room));
+      out.set(k, cur + excess * ((capOf(k) - cur) / room));
     }
   }
   // Final safety: ensure sum ≤ gross.

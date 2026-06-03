@@ -46,6 +46,10 @@ export function createMetaStrategy(opts: {
   volTargetAnnual?: number;
   /** Floor on the vol-scale so we never fully de-risk to 0 (default 0.25). */
   minVolScale?: number;
+  /** If true (default), the engine clamps the blended book's net-negative weights to 0 (long-only
+   *  projection). Set false to trade the L/S sleeves' shorts genuinely (engine charges borrow). The
+   *  live runner reads this same flag, so the sim and the backtest can never diverge on shorting. */
+  longOnly?: boolean;
 }): MetaStrategyHandle {
   const cfg = opts.config ?? DEFAULT_ALLOCATOR;
   const subs = opts.subStrategies;
@@ -60,7 +64,7 @@ export function createMetaStrategy(opts: {
       "Self-tracking fund-of-strategies: weights each sleeve by realized rolling Sharpe (shrunk to a backtest prior), risk-balanced, regime-tilted, and volatility-targeted; de-risks in bear/high-vol regimes.",
     rebalanceDays: opts.rebalanceDays ?? 5,
     warmupBars: warmup,
-    longOnly: true,
+    longOnly: opts.longOnly ?? true,
     instrument: "equity",
     lastDecision: null,
     lastVolScale: 1,

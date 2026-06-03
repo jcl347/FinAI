@@ -7,12 +7,14 @@ simulated-trade tracking. **Simulation only — no real orders are placed.**
 
 ## What it does
 
-1. **Strategy Engine (ARMS)** — eight low-correlation sleeves (cross-sectional momentum, low-volatility,
+1. **Strategy Engine (ARMS)** — 12 low-correlation sleeves: cross-sectional momentum, low-volatility,
    factor-ETF momentum, sector rotation, multi-asset trend, **cross-asset trend**, a **VIX-term tail hedge**,
-   and a market-neutral **residual-momentum L/S**). A self-tracking allocator measures each sleeve's realized
-   rolling Sharpe daily, weights them with an equal-risk base + light tilt, **benches sleeves that stop
-   working**, de-risks in crises, and targets ~10% volatility — all leverage-free. A Vercel cron runs it
-   daily and persists the book + every simulated trade to Neon Postgres.
+   three market-neutral diversifiers (**residual-momentum**, **long-term reversal**, **sector long-term reversal**),
+   and a **commodity-trend** real-asset diversifier. They rank within a **liquidity-screened ~430-name universe**
+   plus multi-asset ETFs, using free **unique data** (CBOE SKEW/VVIX, oil/gold implied vol, the Treasury curve,
+   the US-dollar index). A self-tracking allocator measures each sleeve's realized rolling Sharpe daily, weights
+   by an equal-risk base + light tilt, **benches sleeves that stop working**, de-risks in crises, and targets ~10%
+   volatility — all leverage-free. A Vercel cron runs it daily and persists the book + every simulated trade to Neon.
 2. **Cash-Secured Put Analyzer** — screens high-liquidity stocks, scores put-selling opportunities with a
    research-validated 8-factor model (tastytrade, DataDrivenOptions, CBOE, Schwab research), a 14-rule
    decision checklist, and a separate put-trade simulation journal.

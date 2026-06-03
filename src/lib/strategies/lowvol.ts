@@ -11,7 +11,7 @@
  */
 import type { Strategy, StrategyContext, StrategySignal } from "./types";
 import { annualizedVol } from "./indicators";
-import { isEquity } from "./universe";
+import { liquidEquities } from "./screens";
 
 export const lowVolatility: Strategy = {
   key: "low_vol",
@@ -27,8 +27,7 @@ export const lowVolatility: Strategy = {
     if (ctx.regime.spyAbove200 === false) {
       return { weights: [], confidence: 0.3, notes: "SPY<200d — risk-off cash" };
     }
-    const scored = ctx.universe
-      .filter(isEquity)
+    const scored = liquidEquities(ctx, 200)
       .map((s) => ({ s, v: annualizedVol(ctx.closes(s), 90) }))
       .filter((x) => x.v > 0);
     if (scored.length < 10) return { weights: [], confidence: 0.1 };

@@ -11,7 +11,7 @@ import YahooFinanceModule from "yahoo-finance2";
 import type { Bar } from "./strategies/types";
 import { buildAligned } from "./backtest/align";
 import type { AlignedData } from "./backtest/engine";
-import { ALL_BACKTEST_SYMBOLS } from "./strategies/universe";
+import { PRODUCTION_UNIVERSE } from "./strategies/universe";
 
 function createYahooFinance(): any {
   const opts = { suppressNotices: ["yahooSurvey"] };
@@ -69,12 +69,17 @@ export async function getDailyBars(symbol: string, years = 11): Promise<Bar[]> {
   return bars;
 }
 
-/** Fetch + align the full strategy universe for a daily run. */
+/**
+ * Fetch + align the LIVE strategy universe for a daily run. Defaults to PRODUCTION_UNIVERSE (lean —
+ * only what the registered sleeves trade/read) and a higher concurrency so the Vercel cron finishes
+ * well inside maxDuration. `equityCoverage` lets the caller HOLD (skip the rebalance) rather than
+ * trade a degraded, re-ranked liquid-200 if too many equities failed to load.
+ */
 export async function loadAlignedUniverse(
-  symbols: string[] = ALL_BACKTEST_SYMBOLS,
+  symbols: string[] = PRODUCTION_UNIVERSE,
   years = 11,
-  concurrency = 4
-): Promise<{ data: AlignedData; loaded: number; failed: string[] }> {
+  concurrency = 10
+): Promise<{ data: AlignedData; loaded: number; failed: string[]; equityCoverage: number }> {
   const series = new Map<string, Bar[]>();
   const failed: string[] = [];
   for (let i = 0; i < symbols.length; i += concurrency) {
@@ -84,9 +89,10 @@ export async function loadAlignedUniverse(
       if (r.status === "fulfilled" && r.value.length > 0) series.set(batch[j], r.value);
       else failed.push(batch[j]);
     });
-    if (i + concurrency < symbols.length) await new Promise((r) => setTimeout(r, 250));
+    if (i + concurrency < symbols.length) await new Promise((r) => setTimeout(r, 120));
   }
   if (!series.has("SPY")) throw new Error("SPY failed to load — cannot build calendar");
   const data = buildAligned(series, { vixSymbol: "^VIX", vix9dSymbol: "^VIX9D" });
-  return { data, loaded: series.size, failed };
+  const equityCoverage = symbols.length ? series.size / symbols.length : 0;
+  return { data, loaded: series.size, failed, equityCoverage };
 }

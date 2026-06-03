@@ -8,7 +8,7 @@
  * self-tracking audit trail). No IO here — adapters persist the result.
  */
 import { makeContext, symbolsWithHistory, type AlignedData } from "../backtest/engine";
-import { DEFAULT_COSTS, tradeCost, type CostModel } from "../backtest/costs";
+import { DEFAULT_COSTS, tradeCost, dailyBorrowCost, type CostModel } from "../backtest/costs";
 import type { RegimeSnapshot } from "../strategies/types";
 import type { AllocationDecision } from "../strategies/allocator";
 import {
@@ -16,8 +16,15 @@ import {
   PRODUCTION_SLEEVES,
   STRATEGY_PRIORS,
   PRODUCTION_REBALANCE_DAYS,
+  PRODUCTION_MAX_GROSS,
 } from "../strategies/production";
+import { isMacroTicker } from "../strategies/universe";
 import { buildCurvePerfProvider, perfStatRows } from "./perf";
+
+/** Universe floor used by the LIVE trade context — MUST equal the backtested meta's warmup
+ *  (max sub-sleeve warmup + 5, see meta.ts) so the live-traded cross-section is identical to the
+ *  validated backtest's buildUniverse(meta). Mismatch = silent sim/live divergence (review fix). */
+const META_WARMUP_FLOOR = Math.max(...PRODUCTION_SLEEVES.map((s) => s.warmupBars)) + 5;
 
 export interface SimBook {
   initialCapital: number;
@@ -82,7 +89,8 @@ export function runDay(data: AlignedData, book: SimBook, opts: DailyRunOptions =
   const date = data.calendar[i];
 
   // Context (cheap — no backtests) so we can gate on regime + cadence before heavy compute.
-  const universe = symbolsWithHistory(data, i, 150);
+  // Floor MUST match the backtested meta's warmup so the live cross-section == the validated one.
+  const universe = symbolsWithHistory(data, i, META_WARMUP_FLOOR);
   const ctx = makeContext(data, universe, i);
 
   // Rebalance gate: rebalance on cadence, on first run, on force, or on a crisis flip.
@@ -98,6 +106,11 @@ export function runDay(data: AlignedData, book: SimBook, opts: DailyRunOptions =
   // Mark the book to today's close.
   const holdings = { ...book.holdings };
   let cash = book.cash;
+  // Accrue one day of borrow on any short positions (mirrors the backtest engine). No-op for the
+  // long-only production book; keeps cash/financing identical to the backtest if longOnly is flipped.
+  for (const [sym, sh] of Object.entries(holdings)) {
+    if (sh < 0) { const p = priceAt(data, sym, i); if (p != null) cash -= dailyBorrowCost(sh * p, costs); }
+  }
   const equityOf = (): number => {
     let eq = cash;
     for (const [sym, sh] of Object.entries(holdings)) {
@@ -140,9 +153,22 @@ export function runDay(data: AlignedData, book: SimBook, opts: DailyRunOptions =
   const decision = meta.lastDecision;
   const volScale = meta.lastVolScale;
 
-  // 4) Diff target weights → trades.
+  // 4) Diff target weights → trades. Normalize EXACTLY as the backtest engine does so the live book
+  //    matches the validated one: never trade macro/context tickers, clamp net-negative weights when
+  //    the meta is long-only, then cap gross to PRODUCTION_MAX_GROSS.
   const targets = new Map<string, number>();
-  for (const w of signal.weights) targets.set(w.symbol, (targets.get(w.symbol) ?? 0) + w.weight);
+  for (const w of signal.weights) {
+    if (isMacroTicker(w.symbol)) continue; // ^VIX/^TNX/DX-Y.NYB etc. are signals, never positions
+    let wt = w.weight;
+    if (meta.longOnly && wt < 0) wt = 0;
+    if (wt !== 0) targets.set(w.symbol, (targets.get(w.symbol) ?? 0) + wt);
+  }
+  let grossTarget = 0;
+  for (const v of targets.values()) grossTarget += Math.abs(v);
+  if (grossTarget > PRODUCTION_MAX_GROSS && grossTarget > 0) {
+    const sc = PRODUCTION_MAX_GROSS / grossTarget;
+    for (const [k, v] of targets) targets.set(k, v * sc);
+  }
   const reasonOf = new Map(signal.weights.map((w) => [w.symbol, w.reason ?? ""]));
   const symbols = new Set<string>([...targets.keys(), ...Object.keys(holdings)]);
 
@@ -176,8 +202,8 @@ export function runDay(data: AlignedData, book: SimBook, opts: DailyRunOptions =
     });
   }
 
-  // NB: every production sleeve emits non-negative weights and longOnly clamps the rest, so the
-  // book never shorts → no borrow accrual is owed (unlike the backtest engine which supports shorts).
+  // Borrow on any shorts is accrued at the top of the day (see above); with the long-only meta the
+  // book holds no shorts, so the accrual is a no-op — but the code path is correct if longOnly flips.
   const equityAfter = equityOf();
   let gross = 0;
   for (const [sym, sh] of Object.entries(holdings)) {

@@ -109,17 +109,23 @@ Research files: [brief.md](research/brief.md) (the grounding), [strategy-univers
 ```
 src/lib/strategies/
   types.ts indicators.ts universe.ts        # core types, pure indicators, tradable universe
-  momentum.ts lowvol.ts factormom.ts        # the 8 sleeves (pure Strategy.generate)
+  momentum.ts lowvol.ts factormom.ts        # core sleeves (pure Strategy.generate)
   rotation.ts trend.ts crossasset.ts tailhedge.ts reversal.ts
-  allocator.ts                              # the adaptive equal-risk + benching + regime + vol-target logic
-  meta.ts                                   # meta-strategy factory (blends sleeves; vol-targets)
-  registry.ts production.ts                 # registry + production source-of-truth (priors, config)
+  residmom.ts ltreversal.ts sectorltrev.ts  # market-neutral L/S diversifiers (long-only-projected in the book)
+  newtrend.ts                               # commodity_trend (REGISTERED) + intlRotation (tested→cut)
+  screens.ts                                # liquidEquities() — top-200 dollar-volume liquidity screen
+  crypto.ts equityls.ts carry.ts altoverlay.ts  # expanded-universe scout sleeves — all TESTED→CUT (documented negatives)
+  allocator.ts                              # adaptive equal-risk + benching + regime + vol-target + per-sleeve caps
+  meta.ts                                   # meta-strategy factory (blends sleeves; vol-targets; longOnly flag drives sim==live)
+  universe.ts                               # 432 equities + crypto + intl/rates/credit/commodity ETFs + alt-data; ALL_BACKTEST vs lean PRODUCTION_UNIVERSE
+  registry.ts production.ts                 # 12-sleeve registry + production source-of-truth (priors, config, long-only)
 src/lib/backtest/  engine.ts costs.ts metrics.ts align.ts   # walk-forward engine (no look-ahead) + cost model
-src/lib/daily/     perf.ts engine.ts        # live perf provider + pure daily-run core (shared by cron + local)
-src/lib/quant-data.ts quant-db.ts           # prod data adapter (yahoo-finance2) + Neon persistence
+src/lib/daily/     perf.ts engine.ts        # live perf provider + pure daily-run core (clamp/borrow/floor MATCH the backtest)
+src/lib/quant-data.ts quant-db.ts           # prod data adapter (yahoo-finance2, lean universe + coverage guard) + Neon
 src/app/api/quant/ run/ state/ reset/       # daily cron target + dashboard state + reset
 src/components/QuantDashboard.tsx           # the "Strategy Engine" UI tab
 scripts/backtest/  data.ts run.ts meta.ts   # offline backtest (raw-fetch loader, --use-system-ca)
+  validate.ts eval-sleeve.ts kill-tests.ts ls-ab.ts probe-altdata.ts   # OOS harness + sleeve-search + kill-tests + L/S A/B + data probe
 scripts/daily/     run.ts                    # local daily-sim harness (file-backed book)
 scripts/ts-resolve.mjs register-ts.mjs       # Node ESM hook to run the TS unchanged (no node_modules)
 ```
@@ -184,9 +190,16 @@ mirrors *every* session to the web).
 - [x] Neon multi-strategy book + `/api/quant/*` + Vercel cron + Strategy Engine UI tab + daily-loop validation
 - [x] Adversarial implementation review → confirmed bugs fixed (vol-target cold-start, trades idempotency,
       first-run race, UI allocation-bar, NaN sanitization, dust-exit, dead-code) and re-validated
+- [x] **Expanded-universe push** ([research/expanded-universe.md](research/expanded-universe.md)): 432 equities +
+      crypto + intl/rates/credit/commodity ETFs + **unique alt-data** (^SKEW/^VVIX/^OVX/^GVZ/Treasury-curve/DXY);
+      execution-anchored fleet (scout 16 → execute → kill-tests → red-team 6); **1 keeper of 16** (commodity_trend);
+      naive expansion HURT the book → **liquidity screen** fix (OOS 0.66→0.86, overfit gap 0.35→0.13); **10-agent
+      code review fixed 2 critical sim/live divergences** (long-only/short clamp + universe-floor) — deployed book
+      now provably == validated book. **Final: full 0.91, OOS 0.86, MaxDD 12.9%, net-β +0.18.** Genuine L/S tested
+      → measured WORSE (OOS 0.76) → long-only retained.
 - [ ] Fold Advanced-fleet BUILD sleeves (ML-concordance gate, narrow style-pair reversion) into the registry
 - [ ] Wire the orthogonality guard (corr-to-core / rolling-β) + drawdown circuit-breaker (specced in red-team.md)
-- [ ] (Optional) modest leverage band on the vol-target to lift Sharpe
+- [ ] (Optional) genuine high-Sharpe levers need a DIFFERENT toolkit (paid point-in-time/options data) — see expanded-universe.md
 
 _Generated with Claude Code. All quantitative claims are from executed walk-forward backtests on real
 public data; nulls are reported as faithfully as the wins._
